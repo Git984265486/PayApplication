@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.Mapper.TuserMapper">
+
+    <resultMap type="com.example.Damain.Tuser" id="userResult">
+        <result property="userID" column="userID"/>
+        <result property="userName" column="userName"/>
+        <result property="realName" column="realName"/>
+        <result property="password" column="password"/>
+        <result property="isAdmin" column="isAdmin"/>
+        <result property="phone" column="phone"/>
+        <result property="sex" column="sex"/>
+        <result property="address" column="address"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <!--查询所有的登录用户信息-->
+    <select id="ListUser" resultMap="userResult">
+        select * from Tuser
+        <where>
+            <if test="_parameter!= null">
+                AND realName like '%' + #{realName} + '%'
+            </if>
+        </where>
+        order by userID
+    </select>
+
+    <!--通过ID拿到用户信息-->
+    <select id="selectUserByID" resultMap="userResult">
+        select * from Tuser where userID = #{userID}
+    </select>
+
+    <!-- 通过登录名精确查找用户信息 -->
+    <select id="selectUserByUserName" resultMap="userResult">
+        select * from Tuser where userName = #{userName}
+    </select>
+
+    <!--用户登录信息验证-->
+    <select id="validateUserData" resultMap="userResult">
+        select * from Tuser where userName = #{userName} and password = #{password}
+    </select>
+
+    <!--通过ID修改用户信息-->
+    <update id="updateUserByID">
+        update Tuser
+        <trim prefix="set" suffixOverrides=",">
+            <if test="realName != '' and realName != null ">
+                realName = #{realName},
+            </if>
+            <if test="phone != '' and phone != null ">
+                phone = #{phone},
+            </if>
+            <if test="address != '' and address != null ">
+                address = #{address},
+            </if>
+            <if test="sex != '' and sex != null ">
+                sex = #{sex},
+            </if>
+            <if test="password != '' and password != null ">
+                password = #{password},
+            </if>
+            <if test="userName != '' and userName != null ">
+                userName = #{userName},
+            </if>
+            <if test="isAdmin != '' and isAdmin != null ">
+                isAdmin = #{isAdmin},
+            </if>
+            <if test="status != '' and status != null ">
+                status = #{status},
+            </if>
+        </trim>
+        <where>
+            <if test="userID!=null">
+                userID = #{userID}
+            </if>
+        </where>
+    </update>
+
+    <!--新增用户-->
+    <insert id="insertNewUser">
+        insert into Tuser (userName , realName , password , sex , phone , isAdmin , address , status)
+            values(#{userName} , #{realName} , #{password} , #{sex} , #{phone} , #{isAdmin} , #{address} , #{status})
+    </insert>
+
+    <!--通过ID删除用户-->
+    <delete id="deleteUserByUserID">
+        delete from Tuser where userID = #{userID}
+    </delete>
+
+</mapper>

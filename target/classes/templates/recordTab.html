@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+
+		<title>收费记录</title>
+
+		<!-- 引入组件库  vue.min.js 要在 index.js 之前引入-->
+		<script src="js/vue.min.js"></script>
+		<script src="js/axios.min.js"></script>
+
+		<!-- 引入样式 -->
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+		<!-- 引入组件库 -->
+		<script src="js/index.js"></script>
+
+	</head>
+	<body>
+		<div id="app">
+			<!-- 搜索框 -->
+			<el-form :inline="true" :model="formInline" class="demo-form-inline" style="text-align: center;">
+			  <el-form-item>
+			    <el-input v-model="formInline.searchStr" ref="finStr" placeholder="输入车牌号码查询"></el-input>
+			  </el-form-item>
+			  <el-form-item>
+			    <el-button type="primary" @click="onSubmit">查询</el-button>
+			  </el-form-item>
+			</el-form>
+			
+			<el-table :data="tableData" style="width: 100%">
+
+				<el-table-column label="订单编号">
+					<template slot-scope="scope">
+						<span>{{ scope.row.orderNumber }}</span>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="车牌号码">
+					<template slot-scope="scope">
+						<span>{{ scope.row.carNo }}</span>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="车辆类型">
+					<template slot-scope="scope">
+						<span>{{ scope.row.carType }}</span>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="车主姓名">
+					<template slot-scope="scope">
+						<el-popover trigger="hover" placement="top">
+							<p>姓名: {{ scope.row.ownerName }}</p>
+							<p>电话: {{ scope.row.ownerPhone }}</p>
+							<p>车辆注册时间: {{ scope.row.registrTime }}</p>
+							<div slot="reference" class="name-wrapper">
+								<el-tag size="medium">{{ scope.row.ownerName }}</el-tag>
+							</div>
+						</el-popover>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="支付状态">
+					<template slot-scope="scope">
+						<el-popover trigger="hover" placement="top">
+							<p>支付状态: {{ scope.row.payStatus }}</p>
+							<p>支付方式: {{ scope.row.payType }}</p>
+							<p>收费金额: {{ scope.row.totalAmount }}</p>
+							<div slot="reference" class="name-wrapper">
+								<el-tag size="medium">{{ scope.row.payStatus }}</el-tag>
+							</div>
+						</el-popover>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="操作">
+					<template slot-scope="scope">
+						<el-button size="mini" type="warning" @click="alertTestMethod(scope.$index, scope.row)">编辑数据</el-button>
+					</template>
+				</el-table-column>
+			</el-table>
+
+
+
+			<!-- 分页 -->
+			<!-- background：带有背景色 -->
+			<!-- page-sizes：每页可调整显示数量 -->
+			<!-- handleSizeChange：每页显示数量改变 -->
+			<!-- handleCurrentChange：当前页面数改变时 -->
+			<!-- currentPage：要跳转的页面 -->
+			<!-- page-sizes：选择页面显示数量 -->
+			<!-- page-size：默认显示数 -->
+			<!-- total：总数 -->
+			<!-- layout：布局 ：总数 - 显示数量 - 上一页 - 下一页 - 跳转到 -->
+			<div class="block">
+				<el-pagination 
+					background
+					@size-change="handleSizeChange" 
+					@current-change="handleCurrentChange" 
+					:current-page="currentPage"
+					:page-sizes="[10, 15, 30, 50]"
+					:page-size="10" 
+					:total="total" 
+					layout="total, sizes, prev, pager, next, jumper">
+				</el-pagination>
+			</div>
+
+			
+			<!---------------------- 弹窗内容 ---------------------------->
+			<el-dialog title="收费信息" :visible.sync="dialogFormVisible">
+				<el-form :model="form">
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.ownerName"  ref="ownerName">
+							    <template slot="prepend" prop="ownerName">车主姓名</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.ownerPhone"  ref="ownerPhone">
+							    <template slot="prepend" prop="ownerPhone">车主电话</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.carNo"  ref="carNo">
+							    <template slot="prepend" prop="carNo">车牌号码</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.carType" :disabled="true"  ref="carType">
+							    <el-select v-model="editObject.carType" slot="append" style="width: 110px;">
+							        <el-option label="小型汽车" value="小型汽车"></el-option>
+							        <el-option label="中型汽车" value="中型汽车"></el-option>
+							        <el-option label="大型汽车" value="大型汽车"></el-option>
+							        <el-option label="挂车" value="挂车"></el-option>
+							    </el-select>
+								<template slot="prepend" prop="carType">车辆类型</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.registrTime"  ref="registrTime">
+							    <template slot="prepend" prop="registrTime">车辆注册时间</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.payType" :disabled="true"  ref="payType">
+								<el-select v-model="editObject.payType" slot="append" style="width: 110px;">
+								    <el-option label="支付宝" value="支付宝"></el-option>
+								    <el-option label="微信" value="微信"></el-option>
+								    <el-option label="现金" value="现金"></el-option>
+								    <el-option label="刷卡" value="刷卡"></el-option>
+								</el-select>
+							    <template slot="prepend" prop="payType">支付方式</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input type="number" v-model="editObject.totalAmount"  ref="totalAmount">
+							    <template slot="prepend" prop="totalAmount">支付金额</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.payStatus" :disabled="true"  ref="payStatus">
+								<el-select v-model="editObject.payStatus" slot="append" style="width: 110px;">
+								    <el-option label="未支付" value="未支付"></el-option>
+								    <el-option label="已支付" value="已支付"></el-option>
+								</el-select>
+							    <template slot="prepend" prop="payStatus">支付状态</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.remark"  ref="remark">
+							    <template slot="prepend" prop="remark">备注信息</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.operater" :disabled="true"  ref="operater">
+							    <template slot="prepend" prop="operater">操作人员</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.autoID" :disabled="true" ref="autoID">
+								<template slot="prepend" prop="autoID">收费编号</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.orderNumber" :disabled="true" ref="orderNumber">
+								<template slot="prepend" prop="orderNumber">订单编号</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					
+				</el-form>
+				<div slot="footer" class="dialog-footer">
+					<el-button @click="dialogFormVisible = false">取 消</el-button>
+					<el-button type="primary" @click="editData">确 定</el-button>
+				</div>
+			</el-dialog>
+
+
+		</div>
+
+		<script>
+			var vues = new Vue({
+
+				el: '#app',
+
+				/**-----【数据初始化】-----**/
+				data() {
+					return {
+						/**-----【弹窗数据初始化】-----**/
+						dialogFormVisible: false,
+						form: {
+							ownerName: '',
+							ownerPhone: '',
+							totalAmount: '',
+							payType: '',
+							payStatus: '',
+							carNo: '',
+							carType: '',
+							registrTime: '',
+							operater: '',
+							remark: ''
+						},
+
+						/**-----【弹框要编辑的数据】-----**/
+						editObject: {
+							autoID: '',
+							orderNumber: '',
+							ownerName: '',
+							ownerPhone: '',
+							totalAmount: '',
+							payType: '',
+							payStatus: '',
+							carNo: '',
+							carType: '',
+							registrTime: '',
+							operater: '',
+							operatTime: '',
+							remark: ''
+						},
+
+
+						/**-----【表格数据】-----**/
+						formInline: {
+						    searchStr: ''
+						},
+						tableData: [],
+						pagesize:10,
+						currentPage: 1,
+						total: 0
+					};
+
+				},
+
+				/**-----【方法启动执行】-----**/
+				mounted() {
+
+					const userName = sessionStorage.getItem("userName");
+					console.log("收费记录页面拿到session的userName：" + userName);
+
+					/**-----【表格获取后台数据】-----**/
+					let str = {
+						carNo : ''
+					};
+					axios({
+						method: "get",
+						url: "http://localhost:8888/searchOrder",
+						params: str		//请求参数
+					}).then(function(response) {
+						/**-----【表格数据赋值】-----**/
+						vues.$data.tableData = response.data.listCharge; 
+						vues.$data.total = response.data.count;
+						
+						console.log("【收费记录页面表格数据】" + JSON.stringify(vues.$data.tableData));
+					}).catch(function(error) {
+						console.log("【收费记录页面报错】" + error);
+					})
+
+				},
+
+				/**-----【方法列表】-----**/
+				methods: {
+
+					/**-----【搜索传递到后台请求数据】-----**/
+					onSubmit(){
+						let findStr = {
+							carNo : vues.$refs.finStr.value
+						};
+						console.log("【搜索内容】" + JSON.stringify(findStr));
+						/**-----【搜索请求后台数据】-----**/
+						axios({
+							method: "get",
+							url: "http://localhost:8888/searchOrder",
+							params: findStr	/**-----请求传递到后台的参数-----**/
+						}).then(function(response) {
+							vues.$data.tableData = response.data.listCharge;
+							vues.$data.total = response.data.count;
+							vues.$data.currentPage = 1;
+						}).catch(function(error) {
+							console.log("【收费记录搜索报错】" + error);
+						})
+					},
+
+					/**-----【每页显示数量改变时执行此方法】-----**/
+					handleSizeChange(val) {
+						vues.$data.pagesize = val;
+						console.log(`每页 ${val} 条`);
+
+						axios({
+							method: "get",
+							url: "http://localhost:8888/searchOrder",
+							params:{
+								carNo : '',
+								page : 1 ,
+								limit : vues.$data.pagesize
+							},
+						}).then(function(response) {
+							/**-----【表格数据赋值】-----**/
+							vues.$data.tableData = response.data.listCharge;
+							vues.$data.total = response.data.count;
+						}).catch(function(error) {
+							console.log("【收费记录页面报错】" + error);
+						})
+					},
+
+					/**-----【当前页面数改变时执行此方法】-----**/
+					handleCurrentChange(val) {
+						vues.$data.currentPage = val;
+						console.log(`当前页: ${val}`);
+
+						axios({
+							method: "get",
+							url: "http://localhost:8888/searchOrder",
+							params:{
+								carNo : '',
+								page : val,
+								limit : vues.$data.pagesize
+							},
+						}).then(function(response) {
+							/**-----【表格数据赋值】-----**/
+							vues.$data.tableData = response.data.listCharge;
+							vues.$data.total = response.data.count;
+						}).catch(function(error) {
+							console.log("【收费记录页面报错】" + error);
+						})
+					},
+
+					/**-----【弹窗 赋值 方法】-----**/
+					alertTestMethod(index, row){
+						this.dialogFormVisible = true;
+						console.log("【弹窗拿到数据】" + JSON.stringify(row));
+						console.log("【选择行字段值】" + row.ownerName);
+						this.editObject = row;
+						this.form.autoID = row.autoID;
+						this.form.orderNumber = row.orderNumber;
+						this.form.ownerName = row.ownerName;
+						this.form.ownerPhone = row.ownerPhone;
+						this.form.totalAmount = row.totalAmount;
+						this.form.payType = row.payType;
+						this.form.payStatus = row.payStatus;
+						this.form.carNo = row.carNo;
+						this.form.carType = row.carType;
+						this.form.registrTime = row.registrTime;
+						this.form.operater = row.operater;			/**【操作者】**/
+						this.form.remark = row.remark;
+					},
+
+					/**-----【从弹窗中取值】-----**/
+					editData(){
+						this.form.autoID = vues.$refs.autoID.value;
+						this.form.orderNumber = vues.$refs.orderNumber.value;
+						this.form.ownerName = vues.$refs.ownerName.value;
+						this.form.ownerPhone = vues.$refs.ownerPhone.value;
+						this.form.totalAmount = vues.$refs.totalAmount.value;
+						this.form.payType = vues.$refs.payType.value;
+						this.form.payStatus = vues.$refs.payStatus.value;
+						this.form.carNo = vues.$refs.carNo.value;
+						this.form.carType = vues.$refs.carType.value;
+						this.form.registrTime = vues.$refs.registrTime.value;
+						this.form.operater = sessionStorage.getItem("realName");		/**【操作者】**/
+						this.form.remark = vues.$refs.remark.value;
+						let editValue = {
+							editVal: vues.form
+						};
+						console.log("【表单数据】"+ JSON.stringify(editValue));
+						/**-----【搜索请求后台数据】-----**/
+						axios({
+							method: "get",
+							url: "http://localhost:8888/editChargeData",
+							params: editValue	/**-----请求传递到后台的参数-----**/
+						}).then(function(response) {
+							console.log("【更新收费信息报错返回结果】" + JSON.stringify(response.data.result));
+							if (response.data.result==="Success"){
+								vues.form.operater = sessionStorage.getItem("realName");
+								vues.$alert('数据修改成功', '编辑信息', {
+									confirmButtonText: '确定',
+								});
+							}
+							vues.dialogFormVisible = false;
+						}).catch(function(error) {
+							console.log("【更新收费信息报错】" + error);
+							vues.dialogFormVisible = false;
+						});
+
+					},
+
+				}
+			})
+		</script>
+	</body>
+</html>

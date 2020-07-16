@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+
+		<title>用户管理</title>
+
+		<!-- 引入组件库  vue.min.js 要在 index.js 之前引入-->
+		<script src="js/vue.min.js"></script>
+		<script src="js/axios.min.js"></script>
+
+		<!-- 引入样式 -->
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+		<!-- 引入组件库 -->
+		<script src="js/index.js"></script>
+
+	</head>
+	<body>
+		<div id="app">
+			<!-- 搜索框 -->
+			<el-form :inline="true" :model="formInline" class="demo-form-inline" style="text-align: center;">
+			  <el-form-item>
+			    <el-input v-model="formInline.searchStr" ref="finStr" placeholder="输入真实姓名查询"></el-input>
+			  </el-form-item>
+			  <el-form-item>
+			    <el-button type="primary" @click="onSubmit">查询</el-button>
+			  </el-form-item>
+			</el-form>
+			
+			<el-table :data="tableData" style="width: 100%">
+
+				<el-table-column label="用户ID">
+					<template slot-scope="scope">
+						<span>{{ scope.row.userID }}</span>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="真实姓名">
+					<template slot-scope="scope">
+						<span>{{ scope.row.realName }}</span>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="登录昵称">
+					<template slot-scope="scope">
+						<span>{{ scope.row.userName }}</span>
+					</template>
+				</el-table-column>
+
+				<el-table-column label="操作">
+					<template slot-scope="scope">
+						<el-button size="mini" type="success" @click="alertMethod(scope.$index, scope.row)">编辑数据</el-button>
+						<el-tooltip class="item" effect="dark" content="请谨慎操作，数据删除后无法恢复！" placement="bottom-start">
+							<el-button size="mini" type="warning" @click="deleteData(scope.row.userID)">删除</el-button>
+						</el-tooltip>
+					</template>
+				</el-table-column>
+			</el-table>
+
+
+
+			<!-- 分页 -->
+			<!-- background：带有背景色 -->
+			<!-- page-sizes：每页可调整显示数量 -->
+			<!-- handleSizeChange：每页显示数量改变 -->
+			<!-- handleCurrentChange：当前页面数改变时 -->
+			<!-- currentPage：要跳转的页面 -->
+			<!-- page-sizes：选择页面显示数量 -->
+			<!-- page-size：默认显示数 -->
+			<!-- total：总数 -->
+			<!-- layout：布局 ：总数 - 显示数量 - 上一页 - 下一页 - 跳转到 -->
+			<div class="block">
+				<el-pagination 
+					background
+					@size-change="handleSizeChange" 
+					@current-change="handleCurrentChange" 
+					:current-page="currentPage"
+					:page-sizes="[10, 25, 50, 100]" 
+					:page-size="10" 
+					:total="total" 
+					layout="total, sizes, prev, pager, next, jumper">
+				</el-pagination>
+			</div>
+
+			
+			<!---------------------- 弹窗内容 ---------------------------->
+			<el-dialog title="用户信息管理" :visible.sync="dialogFormVisible">
+				<el-form :model="form">
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.realName" ref="realName">
+							    <template slot="prepend" prop="realName">真实姓名</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.userName" ref="userName">
+							    <template slot="prepend" prop="userName">登录昵称</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.address" ref="address">
+							    <template slot="prepend" prop="address">居住地址</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.phone" ref="phone">
+							    <template slot="prepend" prop="phone">联系电话</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.userID" :disabled="true" ref="userID">
+							    <template slot="prepend" prop="userID">用 户 I D</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							
+							<el-input v-model="editObject.sex" :disabled="true" ref="sex">
+							    <el-select v-model="editObject.sex" slot="append" style="width: 90px;" ref="carType">
+							        <el-option label="男" value="男"></el-option>
+							        <el-option label="女" value="女"></el-option>
+							    </el-select>
+								<template slot="prepend" prop="sex">用户性别</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.status" :disabled="true" ref="status">
+							    <el-select v-model="editObject.status" slot="append" style="width: 90px;" ref="carType">
+							        <el-option label="在用" value="在用"></el-option>
+							        <el-option label="冻结" value="冻结"></el-option>
+							    </el-select>
+								<template slot="prepend" prop="status">账号状态</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.isAdmin" :disabled="true" ref="isAdmin">
+							    <el-select v-model="editObject.isAdmin" slot="append" style="width: 90px;" ref="carType">
+							        <el-option label="普通用户" value="普通用户"></el-option>
+							        <el-option label="管理员" value="管理员"></el-option>
+							    </el-select>
+								<template slot="prepend" prop="isAdmin">用户权限</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+					<el-form-item>
+						<el-col :span="11">
+							<el-input v-model="editObject.password" :disabled="true" ref="password">
+							    <template slot="prepend" prop="password">登录密码</template>
+							</el-input>
+						</el-col>
+						<el-col :span="11">
+							<el-input v-model="editObject.resetPassWord" ref="resetPassWord">
+							    <template slot="prepend" prop="resetPassWord">重置密码</template>
+							</el-input>
+						</el-col>
+					</el-form-item>
+					
+				</el-form>
+				<div slot="footer" class="dialog-footer" style="text-align: center;">
+					<el-button @click="dialogFormVisible = false">取 消</el-button>
+					<el-button type="success" @click="insertUser">新增用户</el-button>
+					<el-button type="primary" @click="editData">修改信息</el-button>
+				</div>
+			</el-dialog>
+
+
+		</div>
+
+		<script>
+			var vues = new Vue({
+
+				el: '#app',
+
+				/**-----【数据初始化】-----**/
+				data() {
+					return {
+						/**-----【弹窗数据初始化】-----**/
+						dialogFormVisible: false,
+						form: {
+							realName: '',
+							userName: '',
+							address: '',
+							phone: '',
+							userID: '',
+							sex: '',
+							status: '',
+							isAdmin: '',
+							password: '',
+							resetPassWord: ''
+						},
+						
+						/**-----【要编辑的数据】-----**/
+						editObject: {
+							realName: '',
+							userName: '',
+							address: '',
+							phone: '',
+							userID: '',
+							sex: '',
+							status: '',
+							isAdmin: '',
+							password: '',
+							resetPassWord: '',
+						},
+
+
+						/**-----【表格数据】-----**/
+						formInline: {
+						    searchStr: ''
+						},
+						tableData: [],
+						pagesize:10,
+						currentPage: 1,
+						total: 0
+					};
+
+				},
+
+				/**-----【方法启动执行】-----**/
+				mounted() {
+
+					/**-----【表格获取后台数据】-----**/
+					let str = {
+						realName : ''
+					};
+					axios({
+						method: "get",
+						url: "http://localhost:8888/ListUser",
+						params: str		//请求参数
+					}).then(function(response) {
+						/**-----【表格数据赋值】-----**/
+						vues.$data.tableData = response.data.listUser; 
+						vues.$data.total = response.data.count;
+						
+						//console.log("【收费记录页面表格数据】" + JSON.stringify(vues.$data.tableData));
+					}).catch(function(error) {
+						console.log("【收费记录页面报错】" + error);
+					})
+
+				},
+
+				/**-----【方法列表】-----**/
+				methods: {
+					
+					onSubmit(){
+						
+						/**-----【搜索传递到后台的数据】-----**/
+						let findStr = {
+							realName : vues.$refs.finStr.value
+						}
+						console.log("【搜索内容】" + JSON.stringify(findStr));
+						
+						/**-----【搜索请求后台数据】-----**/
+						axios({
+							method: "get",
+							url: "http://localhost:8888/ListUser",
+							/**-----请求传递参数-----**/
+							params: findStr
+						}).then(function(response) {
+							//console.log("【搜索返回结果】" + JSON.stringify(response.data.listUser));
+							vues.$data.tableData = response.data.listUser;
+							vues.$data.total = response.data.count;
+							vues.$data.currentPage = 1;
+						}).catch(function(error) {
+							console.log("【收费记录搜索报错】" + error);
+						})
+					},
+
+					/**-----【每页显示数量改变时执行此方法】-----**/
+					handleSizeChange(val) {
+						vues.$data.pagesize = val;
+						console.log(`每页 ${val} 条`);
+						axios({
+							method: "get",
+							url: "http://localhost:8888/ListUser",
+							params:{
+								realName : vues.$refs.finStr.value,
+								page : 1 ,
+								limit : vues.$data.pagesize
+							},
+						}).then(function(response) {
+							/**-----【表格数据赋值】-----**/
+							vues.$data.tableData = response.data.listUser;
+							vues.$data.total = response.data.count;
+						}).catch(function(error) {
+							console.log("【收费记录页面报错】" + error);
+						})
+					},
+
+					/**-----【当前页面数改变时执行此方法】-----**/
+					handleCurrentChange(val) {
+						vues.$data.currentPage = val;
+						console.log(`当前页: ${val}`);
+						axios({
+							method: "get",
+							url: "http://localhost:8888/ListUser",
+							params:{
+								realName : vues.$refs.finStr.value,
+								page : val,
+								limit : vues.$data.pagesize
+							},
+						}).then(function(response) {
+							/**-----【表格数据赋值】-----**/
+							vues.$data.tableData = response.data.listUser;
+							vues.$data.total = response.data.count;
+						}).catch(function(error) {
+							console.log("【收费记录页面报错】" + error);
+						})
+					},
+
+					/**-----【弹窗 - 赋值 - 方法】-----**/
+					alertMethod(index, row){
+						let user = sessionStorage.getItem("isAdmin");
+						if( user === '管理员'){
+							this.dialogFormVisible = true;
+							console.log("【弹窗拿到数据】" + JSON.stringify(row));
+							console.log("【选择行字段值】" + row.realName);
+							this.editObject = row;
+							this.form.realName = row.realName;
+							this.form.userName = row.userName;
+							this.form.address = row.address;
+							this.form.phone = row.phone;
+							this.form.userID = row.userID;
+							this.form.sex = row.sex;
+							this.form.status = vues.$refs.status;
+							this.form.isAdmin = row.isAdmin;
+							this.form.password = row.password;
+							this.form.resetPassWord = '';
+						}else{
+							vues.$message.error('你不是管理员，无权限操作此功能！');
+							this.dialogFormVisible = false;
+						}
+						
+					},
+					
+					/**---------------------【弹框中的事件处理】-------------------**/
+					
+					/**-----【删除数据】-----**/
+					deleteData(userID){
+						let user = sessionStorage.getItem("isAdmin");
+						if( user === '管理员'){
+
+							//vues.$message.error('在此进行删除操作！');
+							let delUserID = {
+								userID: userID
+							};
+							axios({
+								method: "get",
+								url: "http://localhost:8888/deleteUser",
+								params: delUserID
+							}).then(function(response) {
+								console.log("【删除用户结果】" + response.data.result);
+								if(response.data.result === 'deleteSuccess'){
+									vues.currentPage = 1;
+									vues.$message.success('删除用户成功！');
+									vues.dialogFormVisible = false;
+									vues.$data.tableData = response.data.listUser;
+									vues.$data.total = response.data.count;
+								}else{
+									vues.$message.error('删除用户失败！');
+								}
+							})
+						}else{
+							vues.$message.error('你不是管理员，无权限操作此功能！');
+							this.dialogFormVisible = false;
+						}
+					},
+					
+					/**-----【编辑数据】-----**/
+					editData(){
+						/**【拿到表单数据】**/
+						this.form.realName = vues.$refs.realName.value;
+						this.form.userName = vues.$refs.userName.value;
+						this.form.address = vues.$refs.address.value;
+						this.form.phone = vues.$refs.phone.value;
+						this.form.sex = vues.$refs.sex.value;
+						this.form.status = vues.$refs.status.value;
+						this.form.isAdmin = vues.$refs.isAdmin.value;
+						this.form.password = vues.$refs.password.value;
+						this.form.resetPassWord = vues.$refs.resetPassWord.value;
+						
+						let editStr = {
+							personalData: vues.form
+						};
+						
+						axios({
+							method: "get",
+							url: "http://localhost:8888/editPersonalInfo",
+							params: editStr
+						}).then(function(response) {
+							console.log("【修改用户结果】" + response.data.result);
+							console.log("【修改后数据】" + JSON.stringify(response.data.editData));
+							if(response.data.result === 'editSuccess'){
+								vues.$message.success('数据修改成功！');
+								vues.form.realName = response.data.editData.realName;
+								vues.form.userName = response.data.editData.userName;
+								vues.form.address = response.data.editData.address;
+								vues.form.phone = response.data.editData.phone;
+								vues.form.sex = response.data.editData.sex;
+								vues.form.status = response.data.editData.status;
+								vues.form.isAdmin = response.data.editData.isAdmin;
+								vues.form.password = response.data.editData.password;
+								vues.form.resetPassWord = '';
+								// vues.$refs.password = response.data.editData.password;
+								vues.$refs.resetPassWord = '';
+								vues.dialogFormVisible = false;
+							}else{
+								vues.$message.error('数据修改失败！');
+							}
+						});
+						
+						console.log("【表单数据】"+ JSON.stringify(editStr));
+					},
+					
+					/**-----【新增用户】-----**/
+					insertUser(){
+						this.form.realName = vues.$refs.realName.value;
+						this.form.userName = vues.$refs.userName.value;
+						this.form.address = vues.$refs.address.value;
+						this.form.phone = vues.$refs.phone.value;
+						this.form.sex = vues.$refs.sex.value;
+						this.form.status = vues.$refs.status.value;
+						this.form.isAdmin = vues.$refs.isAdmin.value;
+						this.form.password = vues.$refs.password.value;
+						this.form.resetPassWord = vues.$refs.resetPassWord.value;
+						
+						let insertStr = {
+							insertUserData: vues.form
+						};
+						
+						axios({
+							method: "get",
+							url: "http://localhost:8888/insertUser",
+							params: insertStr
+						}).then(function(response) {
+							console.log("【新增用户结果】" + response.data.result);
+							if(response.data.result === 'userExists'){
+								vues.$message.error('新增用户失败！登录昵称已存在，请更改登录昵称！');
+							}else{
+								vues.$message.success('新增用户成功！');
+								vues.currentPage = 1;
+								vues.dialogFormVisible = false;
+								vues.$data.tableData = response.data.listUser;
+								vues.$data.total = response.data.count;
+							}
+						});
+					},
+
+				}
+			})
+		</script>
+	</body>
+</html>

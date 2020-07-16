@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.Mapper.TchargeMapper">
+
+    <resultMap type="com.example.Damain.Tcharge" id="chargeResult">
+        <result property="autoID" column="autoID"/>
+        <result property="orderNumber" column="orderNumber"/>
+        <result property="ownerName" column="ownerName"/>
+        <result property="ownerPhone" column="ownerPhone"/>
+        <result property="totalAmount" column="totalAmount"/>
+        <result property="payType" column="payType"/>
+        <result property="payStatus" column="payStatus"/>
+        <result property="carNo" column="carNo"/>
+        <result property="carType" column="carType"/>
+        <result property="registrTime" column="registrTime"/>
+        <result property="operater" column="operater"/>
+        <result property="operatTime" column="operatTime"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <!--查询所有的收费信息-->
+    <select id="ListCharge" resultMap="chargeResult">
+        select * from Tcharge ORDER BY autoID DESC
+    </select>
+
+    <!--通过订单号查询收费信息-->
+    <select id="selectDataByOrderNumber" resultMap="chargeResult">
+        select * from Tcharge where orderNumber = #{orderNumber}
+    </select>
+
+    <!--通过车牌号码过滤查询30天内所有的收费信息-->
+    <select id="FilterData" resultMap="chargeResult">
+        select * from Tcharge
+        <where>
+            <if test="carNo !='' and carNo != ''">
+                AND Tcharge.carNo like '%' + #{carNo} + '%'
+            </if>
+        </where>
+        where datediff(DAY,operatTime,getdate())&lt;=30 ORDER BY autoID DESC
+    </select>
+
+    <!--插入订单信息-->
+    <insert id="insertChargeData">
+        insert into Tcharge (orderNumber , ownerName , ownerPhone , totalAmount , payType , payStatus , carNo , carType , registrTime ,
+            operater , operatTime , remark) values(#{orderNumber} , #{ownerName} , #{ownerPhone} , #{totalAmount} , #{payType} , #{payStatus},
+            #{carNo} , #{carType} , #{registrTime} , #{operater} , #{operatTime} , #{remark})
+    </insert>
+
+    <!--更新订单信息-->
+    <update id="updateChargeData">
+        update Tcharge set ownerName=#{ownerName} , ownerPhone =#{ownerPhone} , payType =#{payType} , carNo =#{carNo} , carType =#{carType} ,
+            operater =#{operater} , operatTime =#{operatTime} , payStatus = #{payStatus},  remark =#{remark} , totalAmount = #{totalAmount} ,
+            registrTime = #{registrTime} where orderNumber =#{orderNumber} ;
+    </update>
+
+</mapper>

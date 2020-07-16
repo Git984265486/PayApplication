@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>编辑个人信息</title>
+		<!-- 引入组件库  vue.min.js 要在 index.js 之前引入-->
+		<script src="js/vue.min.js"></script>
+		<script src="js/axios.min.js"></script>
+
+		<!-- 引入样式 -->
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+		<!-- 引入组件库 -->
+		<script src="js/index.js"></script>
+	</head>
+
+	<body>
+		<div id="personalEdit">
+
+			<el-form :model="personalForm" :rules="rules" ref="personalForm" label-width="100px">
+				
+				<el-divider content-position="center">基本信息</el-divider>
+				
+				<el-form-item style="margin-top: 5%;">
+					<el-col :span="10">
+						<el-form-item prop="realName">
+							<el-input v-model="personalForm.realName">
+								<template slot="prepend" prop="realName">真实姓名</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="10">
+						<el-input v-model="personalForm.phone">
+							<template slot="prepend" prop="phone">联系方式</template>
+						</el-input>
+					</el-col>
+				</el-form-item>
+				
+				<el-form-item>
+					<el-col :span="10">
+						<el-input v-model="personalForm.address">
+							<template slot="prepend" prop="address">居住地址</template>
+						</el-input>
+					</el-col>
+					<el-col :span="10">
+						<el-input v-model="personalForm.sex" :disabled="true">
+							<el-select v-model="personalForm.sex" slot="append" style="width:100px">
+							    <el-option label="男" value="男"></el-option>
+							    <el-option label="女" value="女"></el-option>
+							</el-select>
+							<template slot="prepend" prop="sex">用户性别</template>
+						</el-input>
+					</el-col>
+				</el-form-item>
+				
+				<el-form-item style="margin-bottom: 5%;">
+					<el-col :span="10">
+						<el-input v-model="personalForm.userID" :disabled="true">
+							<template slot="prepend" prop="userID">用户编号</template>
+						</el-input>
+					</el-col>
+					<el-col :span="10">
+						<el-input v-model="personalForm.isAdmin" :disabled="true">
+							<template slot="prepend" prop="isAdmin">用户身份</template>
+						</el-input>
+					</el-col>
+				</el-form-item>
+				
+				<el-divider content-position="center">登录信息</el-divider>
+				
+				<el-form-item style="margin-top: 5%;">
+					<el-col :span="20">
+						<el-input v-model="personalForm.oldPass" show-password>
+							<template slot="prepend" prop="oldPass">输入旧密码</template>
+						</el-input>
+					</el-col>
+				</el-form-item>
+					
+				
+				<el-form-item>
+					<el-col :span="10">
+						<el-form-item prop="newPass">
+							<el-input v-model="personalForm.newPass" show-password>
+								<template slot="prepend" prop="newPass">输入新密码</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="10">
+						<el-input v-model="personalForm.newPassWord" show-password>
+							<template slot="prepend" prop="newPassWord">再次输入新密码</template>
+						</el-input>
+					</el-col>
+				</el-form-item>
+				
+				
+				<el-form-item style="text-align: center; margin-top: 5%;">
+					<el-button type="primary" @click="submitForm('personalForm')">修改信息</el-button>
+				</el-form-item>
+
+			</el-form>
+
+		</div>
+
+		<script>
+			var personalVue = new Vue({
+				el: '#personalEdit',
+
+				/**-----【数据初始化】-----**/
+				data() {
+					return {
+						personalForm: {
+							realName:'',
+							phone: '',
+							address: '',
+							sex: '',
+							userID: '',
+							isAdmin: '',
+							oldPass: '',
+							newPass: '',
+							newPassWord:''
+						},
+						rules: {
+							
+							realName:[{
+								required: true,
+								message: '真实姓名不能为空',
+								trigger: 'change'
+							}],
+						}
+					};
+				},
+
+				/**-----【方法启动执行】-----**/
+				mounted() {
+
+					const userID = sessionStorage.getItem("userID");
+					if (userID === null || userID === ''){
+						window.location.href = "/login";
+					}
+
+					let selectID = {
+						userID : sessionStorage.getItem("userID")
+					};
+					
+					axios({
+						method: "get",
+						url: "http://localhost:8888/selectUserByID",
+						params: selectID
+					}).then(function(response) {
+						console.log("【搜索用户结果】" + JSON.stringify(response.data.result));
+						if(response.data.result ==='selectSuccess'){
+							//console.log("【返回用户信息】" + JSON.stringify(response.data.userData));
+							personalVue.personalForm.realName = response.data.userData.realName;
+							personalVue.personalForm.phone = response.data.userData.phone;
+							personalVue.personalForm.address = response.data.userData.address;
+							personalVue.personalForm.sex = response.data.userData.sex;
+							personalVue.personalForm.userID = response.data.userData.userID;
+							personalVue.personalForm.isAdmin = response.data.userData.isAdmin;
+						}
+					}).catch(function(error) {
+						console.log("【收费记录搜索报错】" + error);
+					})
+					
+				},
+
+				/**-----【方法列表】-----**/
+				methods: {
+					submitForm(formName) {
+						this.$refs[formName].validate((valid) => {
+							/**【是否符合表单验证要求】**/
+							if (valid) {
+								
+								/**【表单所有数据】**/
+								let editData = {
+									personalData : personalVue.personalForm
+								};
+								//console.log("表单数据：" + JSON.stringify(editData));
+								
+								/**【拿到旧密码框输入的数据】**/
+								let oldpassword = personalVue.personalForm.oldPass;
+								//console.log("旧密码框输入的数据：" + oldpassword);
+								
+								/**【旧密码输入框是否为空】**/
+								if(oldpassword !== null && oldpassword !== ''){
+									
+									/**【数据库当前密码】**/
+									let passwordData = sessionStorage.getItem("password");
+									//console.log("数据库拿到的数据：" + passwordData);
+									
+									/**【旧密码是否正确】**/
+									if( oldpassword === passwordData){
+										
+										/**【新密码第一次输入】**/
+										let newPass = personalVue.personalForm.newPass;
+										console.log("第一次输入的密码：" + newPass);
+										
+										/**【新密码第二次输入】**/
+										let newPassWord = personalVue.personalForm.newPassWord;
+										console.log("第二次输入的密码：" + newPassWord);
+										
+										/**【新密码输入框是否为空】**/
+										if(newPass !== null && newPass !== '' && newPassWord !== null && newPassWord !== ''){
+											
+											/**【两次新密码是否一致】**/
+											if(newPass === newPassWord){
+												
+												/**【密码长度判断】**/
+												if(6 <= newPass.length && newPass.length <= 16){
+													axios({
+														method: "get",
+														url: "http://localhost:8888/editPersonalInfo",
+														params: editData
+													}).then(function(response) {
+														console.log("【修改用户结果】" + response.data.result);
+														console.log("【修改后数据】" + JSON.stringify(response.data.editData));
+														if(response.data.result === 'editSuccess'){
+															personalVue.$message.success('数据修改成功！');
+															personalVue.personalForm.realName = response.data.editData.realName;
+															personalVue.personalForm.phone = response.data.editData.phone;
+															personalVue.personalForm.address = response.data.editData.address;
+															personalVue.personalForm.sex = response.data.editData.sex;
+															personalVue.personalForm.userID = response.data.editData.userID;
+
+															sessionStorage.setItem("password",response.data.editData.password);
+															personalVue.personalForm.oldPass = '';
+															personalVue.personalForm.newPass = '';
+															personalVue.personalForm.newPassWord = '';
+
+														}else{
+															personalVue.$message.error('数据修改失败！');
+														}
+													})
+												}else{
+													personalVue.$message.error('密码长度6到16位！');
+													return false;
+												}
+											}else{
+												personalVue.$message.error('新密码两次输入不一致！');
+												return false;
+											}
+										}else{
+											personalVue.$message.info('修改密码请输入正确旧密码以及两次相同新密码');
+											return false;
+										}
+									}else{
+										personalVue.$message.error('旧密码输入错误！');
+										return false;
+									}
+								}else{
+									
+									axios({
+										method: "get",
+										url: "http://localhost:8888/editPersonalInfo",
+										params: editData
+									}).then(function(response) {
+										console.log("【修改用户结果】" + response.data.result);
+										console.log("【修改后数据】" + JSON.stringify(response.data.editData));
+										if(response.data.result === 'editSuccess'){
+											personalVue.$message.success('数据修改成功！');
+											personalVue.personalForm.realName = response.data.editData.realName;
+											personalVue.personalForm.phone = response.data.editData.phone;
+											personalVue.personalForm.address = response.data.editData.address;
+											personalVue.personalForm.sex = response.data.editData.sex;
+											personalVue.personalForm.userID = response.data.editData.userID;
+										}else{
+											personalVue.$message.error('数据修改失败！');
+										}
+									})
+									
+								}
+							} else {
+								personalVue.$message.error('请按照要求填入数据！');
+								return false;
+							}
+						});
+					},
+				},
+				
+			})
+		</script>
+	</body>
+</html>

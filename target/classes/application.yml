@@ -1,0 +1,24 @@
+server:
+  #端口
+  port: 8888
+
+spring:
+  #HTML页面配置
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+  #静态页面JS,CSS配置
+  mvc:
+    static-path-pattern: /**
+
+  #数据库连接
+  datasource:
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    url: jdbc:sqlserver://localhost:1433;DatabaseName=SFXTDB
+    username: sa
+    password: 81236238
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	    <meta charset="UTF-8">
+	    <title>登录首页</title>
+	    
+		<!-- 引入组件库  vue.min.js 要在 index.js 之前引入-->
+		<script src="js/vue.min.js"></script>
+		<script src="js/axios.min.js"></script>
+		
+		<!-- 引入样式 -->
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+		<!-- 引入组件库 -->
+		<script src="js/index.js"></script>
+		<!-- 登录页面样式 -->
+		<link rel="stylesheet" type="text/css" href="css/loginFonts.css" />
+	</head>
+	<body>
+	    <div id="appLogin" class="wrap">
+		    <div class="container"  style="background-color: rgba(120,120,120,0.5); height: 60%;">
+			
+				<el-alert title="欢迎来到收费系统登录首页" type="success" center :closable="false"></el-alert>
+		
+				<el-form :model="loginForm" ref="loginForm" style="text-align: center; margin-top: 10%;">
+					
+					<el-form-item style="width: 60%; margin-left: 20%;">
+						<el-input v-model="loginForm.username" ref="username">
+						    <template slot="prepend">登录账号</template>
+						</el-input>
+					</el-form-item>
+					
+					<el-form-item style="width: 60%; margin-left: 20%;">
+						<el-input v-model="loginForm.password" type="password" ref="password">
+						    <template slot="prepend">输入密码</template>
+						</el-input>
+					</el-form-item>
+					
+					<el-form-item style="width: 60%; margin-left: 20%; margin-top: 10%;">
+						<el-button type="success" @click="onSubmit">登录</el-button>
+						<el-button type="info" @click="resetForm">重置</el-button>
+					</el-form-item>
+					
+				</el-form>
+				
+		    </div>
+		    <ul>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		        <li></li>
+		    </ul>
+		</div>
+		<script>
+			var vues = new Vue({
+		
+				el: '#appLogin',
+		
+				/**-----【数据初始化】-----**/
+				data() {
+					return {
+						loginForm: {
+							username: '',
+							password: ''
+						},
+						
+					};
+		
+				},
+		
+				/**-----【方法启动执行】-----**/
+				mounted() {
+					
+				},
+		
+				/**-----【方法列表】-----**/
+				methods: {
+					
+					/**-----【登录】-----**/
+					onSubmit(){
+						let formVal = {
+							loginVal : vues.loginForm
+						};
+						const username = vues.$refs.username.value;		//用户名
+						const password = vues.$refs.password.value;		//密码
+						if(username.length === 0){
+							this.$message.error('登录账号不能为空！');
+							return;
+						}
+						if(password.length === 0){
+							this.$message.error('登录密码不能为空！');
+							return;
+						}
+						
+						
+						/**----【用户登录验证】-----**/
+						axios({
+							method: "get",
+							url: "http://localhost:8888/validateUser",
+							params: formVal 	/**----【请求参数】-----**/
+						}).then(function(response) {
+							console.log("【登录验证结果】" + response.data.result);
+							if(response.data.result === 'validateSuccess'){
+
+								if(response.data.userData.status === '冻结'){
+									vues.$message.error("账户已经冻结，请联系管理权启动！");
+								}else{
+									console.log("【登录成功】" + JSON.stringify(response.data.userData));
+									/**----【储存数据到session中】-----**/
+									sessionStorage.setItem("realName" , response.data.userData.realName);
+									sessionStorage.setItem("isAdmin", response.data.userData.isAdmin);
+									sessionStorage.setItem("userID",response.data.userData.userID);
+									sessionStorage.setItem("password",response.data.userData.password);
+									/**----【跳转到首页】-----**/
+									window.location.href = "/Index";
+								}
+							}else{
+								vues.$message.error("登录失败！请再次确认账号、密码是否正确！");
+							}
+						})
+					},
+					
+					/**-----【重置】-----**/
+					resetForm(){
+						this.loginForm.username = '';
+						this.loginForm.password = '';
+					},
+					
+		
+				}
+			})
+		</script>
+	</body>
+</html>

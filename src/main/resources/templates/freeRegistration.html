@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+
+		<title>收费登记</title>
+
+		<!-- 引入组件库  vue.min.js 要在 index.js 之前引入-->
+		<script src="js/vue.min.js"></script>
+		<script src="js/axios.min.js"></script>
+
+		<!-- 引入样式 -->
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+		<!-- 引入组件库 -->
+		<script src="js/index.js"></script>
+
+	</head>
+	<body>
+		<div id="app"><!-- action="http://localhost:8888/pay" -->
+			<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" 
+			 class="demo-ruleForm">
+			 
+				<el-form-item required>
+					<el-col :span="10">
+						<el-form-item prop="carNo">
+							<el-input v-model="ruleForm.carNo" placeholder="请输入车牌号码">
+								<template slot="prepend" >车牌号码</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="10">
+						<el-form-item prop="carType">
+							<el-input v-model="ruleForm.carType" placeholder="请选择车辆类型" :disabled="true">
+								<el-select v-model="ruleForm.carType" slot="append" style="width: 120px;">
+									<el-option label="小型汽车" value="小型汽车"></el-option>
+									<el-option label="中型汽车" value="中型汽车"></el-option>
+									<el-option label="大型汽车" value="大型汽车"></el-option>
+									<el-option label="挂车" value="挂车"></el-option>
+								</el-select>
+								<template slot="prepend" >车辆类型</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+				</el-form-item>
+
+				<el-form-item>
+					<el-col :span="10">
+						<el-form-item prop="name">
+							<el-input v-model="ruleForm.name" placeholder="请输入车主姓名">
+								<template slot="prepend" >车主姓名</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="10">
+						<el-form-item prop="phone">
+							<el-input v-model="ruleForm.phone" placeholder="请输入车主手机">
+								<template slot="prepend" >车主手机</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+				</el-form-item>
+
+				<el-form-item>
+					<el-col :span="10">
+						<el-form-item prop="totalAmount">
+							<el-input type="number" v-model="ruleForm.totalAmount" placeholder="请输入收费金额">
+								<template slot="prepend" >收费金额</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="10">
+						<el-form-item label="登记日期" required prop="selData">
+							<el-date-picker type="date" placeholder="选择日期" v-model="ruleForm.selData" style="width: 100%;"></el-date-picker>
+						</el-form-item>
+					</el-col>
+				</el-form-item>
+
+				<el-form-item>
+					<el-col :span="20">
+						<el-form-item label="支付方式" prop="payType" style="width: 100%;">
+							<el-radio-group v-model="ruleForm.payType">
+								<el-radio border label="支付宝"></el-radio>
+								<el-radio border label="微信"></el-radio>
+								<el-radio border label="现金"></el-radio>
+								<el-radio border label="刷卡"></el-radio>
+							</el-radio-group>
+						</el-form-item>
+					</el-col>
+				</el-form-item>
+
+				<el-form-item>
+					<el-col :span="20">
+						<el-form-item label="备注信息" prop="remark">
+							<el-input type="textarea" v-model="ruleForm.remark" placeholder="备注信息">
+
+							</el-input>
+						</el-form-item>
+					</el-col>
+				</el-form-item>
+
+				<el-form-item style="text-align: center;">
+					<el-button type="primary" @click="submitForm('ruleForm')">立即创建</el-button><!--  style="display:none" -->
+					<el-button @click="resetForm('ruleForm')">重置</el-button>
+				</el-form-item>
+
+			</el-form>
+
+		</div>
+
+		<script>
+			var vues = new Vue({
+
+				el: '#app',
+				/**-----【数据初始化】-----**/
+				data() {
+
+					return {
+						ruleForm: {
+							name: '',
+							carNo: '',
+							selData: '',
+							payType: '',
+							phone: '',
+							totalAmount: '',
+							carType: '',
+							remark: '',
+							operater: sessionStorage.getItem("realName")
+						},
+
+						rules: {
+							name: [{
+								required: true,
+								message: '请输入车主姓名',
+								trigger: 'blur'
+							}],
+							carNo: [{
+								required: true,
+								message: '请输入车牌号码',
+								trigger: 'change'
+							}],
+							selData: [{
+								type: 'date',
+								required: true,
+								message: '请选择日期',
+								trigger: 'blur'
+							}],
+							payType: [{
+								required: true,
+								message: '请选择支付方式',
+								trigger: 'change'
+							}],
+							phone: [{
+								required: true,
+								message: '请输入车主手机号码',
+								trigger: 'blur'
+							}],
+							totalAmount: [{
+								required: true,
+								message: '请输入收费金额',
+								trigger: 'blur'
+							}],
+							carType: [{
+								required: true,
+								message: '请选择车辆类型',
+								trigger: 'blur'
+							}],
+
+						}
+					};
+
+				},
+
+				/**-----【方法启动执行】-----**/
+				mounted() {
+
+
+
+				},
+
+				/**-----【方法列表】-----**/
+				methods: {
+
+					/**【form表单数据提交】**/
+					submitForm(formName) {
+
+						let findStr = {
+							FormVal: vues.ruleForm
+						};
+
+						this.$refs[formName].validate((valid) => {
+							if (valid) {
+								console.log("【收费登记From表单数据】" + JSON.stringify(findStr));
+								
+								axios({
+									method: "get",
+									url: "http://localhost:8888/pay",
+									params: findStr //请求参数
+								}).then(function(response) {
+									console.log("【支付宝返回】" + response.data);
+									
+									document.querySelector('body').innerHTML = response;
+									const div = document.createElement('div');
+									div.innerHTML = response.data;
+									document.body.appendChild(div);
+									document.forms[0].setAttribute('target', '_blank');// 新建窗口页面
+									document.forms[0].submit();
+
+								})
+
+							} else {
+								this.$message.error('请输入合法数据！');
+								return false;
+							}
+						});
+					},
+
+					/**【form表单数据重置】**/
+					resetForm(formName) {
+						this.$refs[formName].resetFields();
+					}
+
+
+				}
+			})
+		</script>
+	</body>
+</html>

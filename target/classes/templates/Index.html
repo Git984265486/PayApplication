@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+
+		<!-- 引入组件库  vue.min.js 要在 index.js 之前引入-->
+		<script src="js/vue.min.js"></script>
+
+		<script src="js/axios.min.js"></script>
+
+		<!-- 引入样式 -->
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+		
+		<!-- 引入组件库 -->
+		<script src="js/index.js"></script>
+
+		<style type="text/css">
+			.divFrame{
+				width: 100%; 
+				height: 780px;
+			}
+			#login{
+				float: right;
+			}
+		</style>
+	
+	</head>
+	<body>
+		<div id="app">
+
+			<el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect"
+			 background-color="#545c64" text-color="#fff" active-text-color="#ffd04b">
+				<el-menu-item index="1" :plain="true" @click="open">收费登记系统</el-menu-item>
+				<el-menu-item index="2" :plain="true" @click="logOut" id="login">退出系统</el-menu-item>
+			</el-menu>
+			
+			<el-tabs type="border-card" :tab-position="tabPosition" style="height: 800px;">
+				
+			    <el-tab-pane label="收费记录">
+					<div>
+						<iframe src="/recordTab" class="divFrame"></iframe>
+					</div>
+				</el-tab-pane>
+				
+			    <el-tab-pane label="收费登记">
+					<div>
+						<iframe src="/freeRegistration" class="divFrame"></iframe>
+					</div>
+				</el-tab-pane>
+				
+			    <el-tab-pane label="个人信息">
+					<div>
+						<iframe src="/editPersonInfo" class="divFrame"></iframe>
+					</div>
+				</el-tab-pane>
+
+				<el-tab-pane label="用户管理">
+					<div>
+						<iframe src="/userManager" class="divFrame"></iframe>
+					</div>
+				</el-tab-pane>
+				
+			  </el-tabs>
+
+		</div>
+
+		<script>
+			new Vue({
+				el: '#app',
+				data() {
+					return {
+						tabPosition: 'left',
+						activeIndex: '1',	//默认进入页面1
+					};
+				},
+
+				/**-----【方法启动执行】-----**/
+				mounted() {
+
+					const userID = sessionStorage.getItem("userID");
+					if (userID === null || userID === ''){
+						window.location.href = "/login";
+					}
+				},
+
+				methods: {
+					 
+					open() {
+						this.$message('收费登记系统');
+					},
+
+					logOut(){
+						/**----【跳转到首页】-----**/
+						sessionStorage.setItem("realName" , null);
+						sessionStorage.setItem("isAdmin", null);
+						sessionStorage.setItem("userID",null);
+						sessionStorage.setItem("password",null);
+						window.location.href = "/login";
+					},
+					
+					handleSelect(key, keyPath) {
+
+					},
+					
+				}
+			})
+		</script>
+	</body>
+</html>
